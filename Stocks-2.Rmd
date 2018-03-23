@@ -1,0 +1,99 @@
+---
+title: "Stocks - 2"
+author: "Cameron Collett"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:  
+    keep_md: true
+    toc: true
+    toc_float: true
+    code_folding: hide
+    fig_height: 6
+    fig_weidth: 12
+    fig_align: 'center'
+---
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r load_libraries, include=FALSE}
+# Use this R-Chunk to load all your libraries!
+#install.packages("tidyverse") # run this line once in console to get package
+library(tidyverse)
+library(dygraphs)
+library(tidyquant)
+library(dplyr)
+library(quantmod)
+library(lubridate)
+library(timetk)
+```
+
+```{r load_data}
+# Use this R-Chunk to import all your datasets!
+
+```
+
+
+## Data Wrangling
+
+```{r tidy_data}
+# Use this R-Chunk to clean & wrangle your data!
+
+tickers <- c("CXW", "F", "GM", "JCP", "KR", "WDC", "NKE","T", "WDAY", "WFC", "WMT")
+
+mydat <- tickers %>%
+  tq_get(get  = "stock.prices",
+         from = today() - years(5),
+         to   = today())
+
+```
+
+## Data Visualization
+
+### Stock Prices
+
+```{r plot_data}
+# Use this R-Chunk to plot & visualize your data!
+
+mydat %>%
+  select(symbol, date, adjusted) %>%
+  spread(key = symbol, value = adjusted) %>%
+  tk_xts(silent = TRUE) %>%
+  dygraph(mydat,
+          ylab = "Stock Price (in millions)",
+          main = "Stock Prices (5 year summary)") %>%
+  dyRangeSelector(height = 100, dateWindow = c(today() - years(1), today())) %>%
+  #dyHighlight(highlightCircleSize = 5, 
+   #           highlightSeriesBackgroundAlpha = 0.2,
+    #          hideOnMouseOut = FALSE) %>%
+  dyHighlight(highlightSeriesOpts = list(strokeWidth = 3)) %>%
+  dyLegend(width = 500)
+```
+
+### Stock Volume
+
+The higher the stock volume, the greater the chance of a change in stock price. The higher the volume, the greater the influence the stock has.
+
+```{r}
+# I want to put weeks on the bottom. I want spaces between the bins. 
+
+mydat %>%
+  mutate(date = floor_date(date, "month"),
+         volume = volume/1000000) %>%
+  group_by(date, symbol) %>%
+  summarise(weeklyvolume = sum(volume)) %>%
+  ggplot() +
+  geom_bar(aes(x = date, y = weeklyvolume, fill = symbol), stat = "identity", position = position_dodge(width=0.5)) +
+  facet_grid(symbol~.) + 
+  labs(x = "Date",
+       y = "Monthly Volume (in millions)",
+       title = "Stock Volumes", 
+       fill = "Company") +
+  theme_bw()
+
+```
+
+## Conclusions
+
+With the stocks that my friend has been following, I would would look between the price of stocks and the volume of that stock. The stock I would choose to invest in would be F. The stock price is high and the volume is high as well. This means that more people want the stock and the value of the stock will probably go up. This seems like a good investment to me. 
