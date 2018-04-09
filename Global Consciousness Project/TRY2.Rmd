@@ -1,0 +1,296 @@
+---
+title: "Collective Consciousness"
+author: "Cameron Collett"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:  
+    keep_md: true
+    toc: true
+    toc_float: true
+    code_folding: hide
+    fig_height: 6
+    fig_weidth: 12
+    fig_align: 'center'
+---
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+library(tidyverse)
+library(mosaic)
+library(lubridate)
+library(dygraphs)
+library(xts)
+library(timetk)
+library(leaflet)
+library(readxl)
+library(htmltools)
+library(maps)
+library(maptools)
+```
+
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#Get the data
+get_data <- function(yr, mth, dy){
+  myyear <- yr
+  mymonth <- mth
+  myday <- dy
+  url1 <- paste0("http://noosphere.princeton.edu/cgi-bin/eggdatareq.pl?z=1&year=", myyear,"&month=", mymonth,"&day=", myday,"&stime=00%3A00%3A00&etime=23%3A59%3A59&gzip=Yes&idate=Yes")
+  dat <- read_csv(url1, skip = 7) %>%
+    slice(2:n()) %>%
+    select(-`11`) %>%
+    rename(ID = `4`,
+           Date = `86400`,
+           Number = `Seconds of data`) %>%
+    mutate(Date = ymd_hms(Date), 
+           second = second(Date),
+           minute = minute(Date),
+           hour = hour(Date),
+           day = day(Date),
+           month = month(Date),
+           year = year(Date))
+}
+
+get_z_score_cumulative <- function(dat){
+  dat_sd <- sd(dat$Number) * sqrt((length(dat$Number)-1)/(length(dat$Number)))
+  dat_mean <- mean(dat$Number)
+  dat_z_score_cumulative <- cumsum((dat$Number - dat_mean) / dat_sd)
+  z_score_dat <- as.data.frame(cbind(dat_z_score_cumulative,dat[2]))
+}
+
+#Testing Code: final.cumulative.z.score <- get_z_score_cumulative(sept11)
+
+
+plot_z_score_cumulative <- function(z_score_dat){
+  ggplot() +
+    geom_point(data = z_score_dat, aes(x = Date, y = dat_z_score_cumulative), size = 0.1, color = "black") + 
+    theme_bw() + 
+    labs(x = "Date",
+         y = "Cumulative Z-score",
+         title = year(z_score_dat$Date)) +
+    scale_y_continuous(limits = c(-500, 500)) + 
+    geom_hline(yintercept = c(min(z_score_dat$dat_z_score_cumulative), max(z_score_dat$dat_z_score_cumulative)), color = "red") + 
+    geom_hline(yintercept = 0, color = "black", size = 0.1)
+  }
+
+
+#Trying Dygraphics
+
+get_dygraphic <- function(z_score_dat){
+  tk_xts(z_score_dat) %>%
+  dygraph() %>%
+  dyLimit(max(z_score_dat$dat_z_score_cumulative), max(z_score_dat$dat_z_score_cumulative),
+          strokePattern = "solid", color = "blue") %>%
+  dyLimit(min(z_score_dat$dat_z_score_cumulative), min(z_score_dat$dat_z_score_cumulative), 
+          strokePattern = "solid", color = "blue") %>%
+  dyLimit(0, "Zero", strokePattern = "solid", color = "black") %>%
+  dyRangeSelector(height = 20) %>%
+    dyAxis("y", label = "Cumulative Z-score")
+}
+
+randomness_by_day <- function(yr, mth, dy){
+  dat <- get_data(yr,mth,dy)
+  z_score <- get_z_score_cumulative(dat)
+  get_dygraphic(z_score)
+}
+
+```
+
+# Scientific Method
+
+For centuries, the scientific method has been used to discover truth. Great scientific men such as Aristotle, Archimedes, Galileo, Bacon and others used this method to understand the world around them and broaden their and our understanding. A brief summary of the Scientific Method is as follows: 
+
+- Ask a question
+- Build a hypothesis
+- Test hypothesis with experimentation to eliminate extraneous influences
+- Analyze the Data
+- Draw a conclusion
+
+# Matter over Mind - Small Scale Experiment
+
+##Ask a Question
+
+- Does the physical world affect individuals internally?
+
+## Build a Hypothesis
+
+- The physical world affects the decisions one makes.
+
+## Test Hypothesis - Thought Experiment
+
+- Note your current mental state
+- Place a large piano three feet above your head tied to a rope you are holding in your hands
+- Release the piano
+- Note your mental state
+
+## Analyze the Results
+
+- What did you feel?
+
+## Draw Conclusion
+
+- The external world affects emotions and how one feels. 
+
+# Mind over Matter and Collective Conciousness
+
+- With the discovery of quantum physics, there has been a keen interest in certain scientific circles of how the very small can affect the very large and what the scientific understanding of individual consciousness is.
+
+- Quantum physics is the nature and behavior of matter and energy at the subatomic level. In the book "What The "Bleep" Do We Know", they state that there have been experiments and tests done that deduce the behavior of electrons as undefineable until it is observed. In short, the observer affects the observed. Our observation or our consciousness affects other objects (or reality) at the quantum level. Mind over Matter. 
+
+- Dr. Dean Radin of the Institute of Noetic Sciences has been working to bring to light in the scientific community at large the evidence of mind over matter - or how consciousness affects the world. The theory is that what we think can have an actual physical effect on the world/universe. 
+
+- One way that Dr. Radin has pursued this is with experiments with Random Event Generators (REG's). A computer produces a string of 200 bits with each bit either being a "0" or a "1" every second, every day. The sum of the bits is recorded and due to randomness, the theoretical mean for these bits is 100. 
+
+- The Global Consciousness Project -The https://youtu.be/cnvJfkI5NVc?t=7&end=152 - 0:00 - 2:30
+
+- "They [REG's] are based on either a single quantum event, like radioactive decay, or a composite of many cascading quantum events, typically "noise" that electronic circuits generate" (What the Bleep do we know) 
+
+- Dr. Radin's group has found that global events that are observed by millions of people correlate to trends of variability of the randomness of these REG's. In other words, they claim that when millions and millions of people are paying attention to the same thing, they actually have an effect on reality. 
+
+- This data has been continually recorded for several years in an effort called the Global Consciousness Project.
+
+## REG Locations
+
+```{r}
+library(readr)
+locations2 <- read_csv("reallocations.csv")
+data("world")
+world <- map_data("world")
+
+ggplot() +
+  geom_polygon(data = world, aes(x = long, y = lat, group = group), fill = "green", color = "blue") +
+  coord_fixed(1.3) + 
+  theme_bw() + 
+  geom_point(data = locations2, aes(x = Longitude, y = Latitude), color = "black", size = 2) +
+  labs(title = "REG's Throughout the World")
+```
+
+
+# Mind over Matter
+
+##Ask a Question
+
+- Can what you think affect the world around you?
+
+## Build a Hypothesis
+
+- With the data of these random numbers that has been recorded from the Global Consciousness Project, if we add up how far away the random number is from the mean (cumulative z-score) and plot it against time, differing trends from random "noise" indicate big events.
+
+# Some things to consider
+
+- Some events are very short.
+
+- These numbers are generated randomly and don't necessarily always indicate a "catastrophic event".
+
+- Z-scores are based on specific population. In these graphics the data is by day and therefore, cumulative z-score values are based off of that day's data and cannot be compared to data from other day's directly. 
+
+- All times are in GMT. 
+
+# Test Hypothesis
+
+## Big events
+
+To stay true to randomness, the presented global events are derived from a database from http://noosphere.princeton.edu/results.html#alldata, which is the website for the Global Consciousness Project. The events were numbered and selected at random. (We included Sept 11, 2001, because according to Dr. Radin, 9-11 was the biggest attended global event)
+
+### Sept 11, 2001 - Terrorist Attack on the World Trade Center
+
+\n
+
+
+```{r message=FALSE, warning=FALSE}
+randomness_by_day(2001,09,11)
+```
+
+
+### Kumbh Mela 2013
+
+\n
+
+
+```{r message=FALSE, warning=FALSE}
+randomness_by_day(2013,02,10)
+```
+
+
+
+### Paris Terror Attacks
+
+\n
+
+```{r message=FALSE, warning=FALSE}
+randomness_by_day(2015,11,13)
+```
+
+### Oscar Ceremonies
+
+\n
+
+```{r message=FALSE, warning=FALSE}
+randomness_by_day(2004,02,29)
+```
+
+## Random Days
+
+These days were selected by random year, month and days. 
+
+### March 25, 2004
+
+\n
+
+```{r message=FALSE, warning=FALSE}
+randomness_by_day(2004,03,25)
+```
+
+### April 2, 2012
+
+\n
+
+```{r message=FALSE, warning=FALSE}
+randomness_by_day(2012,04,02)
+```
+
+### January 26, 2008
+
+\n
+
+```{r message=FALSE, warning=FALSE}
+randomness_by_day(2008,01,26)
+```
+
+### November 14, 2003
+
+\n
+
+```{r message=FALSE, warning=FALSE}
+randomness_by_day(2003,11,14)
+```
+
+
+
+## Analyze the Results
+
+We do see some trends within the significant events. The random days do not have as big of a slope as the significant days. There does seem to be some sharp changes in the trends. 
+
+
+## Draw Conclusion
+
+The answer is undefined. There are years and years of these data that can be pulled from. There are probably better ways statistically to show trends in this data. The randomness does show greater trends with global events, but the steep slope in the randomness of just random days raises questions about what the graphic is actually showing. 
+
+The data seems to be on the way of proving collective consciousness, but it isn't enough. More studies should be done. 
+
+### Continued Questions
+
+- What would happen to the randomness of numbers if someone took an REG to a concert or other big gathering. 
+
+- Does the development of social media facilitate a greater trend in numbers. Does today's data need to be treated differently than data from 10 years ago?
+
+# Resources
+
+- "What the Bleep Do We Know?" by William Arntz, Betsy Chasse and Mark Vicente.
+
+- "The Global Consciousness Project" - http://noosphere.princeton.edu/index.html
